@@ -9,7 +9,7 @@ services:
     restart: unless-stopped
     working_dir: /var/www/html
     volumes:
-      - .:/var/www/html
+      - ./olx-parser-app:/var/www/html
       - ./logs:/var/log
     ports:
       - "8000:80"
