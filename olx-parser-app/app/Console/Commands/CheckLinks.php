@@ -5,6 +5,8 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use App\Models\Link; // Replace with the correct namespace for your Link model
+use Resend\Laravel\Facades\Resend;
+use Illuminate\Support\Facades\View;
 
 class CheckLinks extends Command
 {
@@ -62,10 +64,30 @@ class CheckLinks extends Command
                                 $this->info("Price for link {$link->url_link} remains the same: {$price} UAH");
                             } else {
                                 // Handle price change
-                                $this->warn("Price was changed for link {$link->url_link}: Old Price: {$link->last_price} UAH, New Price: {$price} UAH");
+                                //$this->warn("Price was changed for link {$link->url_link}: Old Price: {$link->last_price} UAH, New Price: {$price} UAH");
+                                
+                                $this->info("New price saved for link {$link->url_link}");
+                                $userEmail = $link->user->email;
+
+                                $this->info("Email of the user {$userEmail}");
+
+                                $htmlContent = View::make('emails.price-changed', [
+                                    'link' => $link,
+                                    'oldPrice' => $link->last_price,
+                                    'newPrice' => $price,
+                                ])->render();
+
+                                // Send an email notification
+                                Resend::emails()->send([
+                                    'from' => 'Robot <onboarding@resend.dev>',
+                                    'to' => $userEmail,
+                                    'subject' => 'Price changed!',
+                                  //  'html' => 'The price for link ' . $link->url_link . ' has changed. Old Price: ' . $link->last_price . ' UAH, New Price: ' . $price . ' UAH',    
+                                
+                                    'html' => $htmlContent,]);
                                 $link->last_price = $price;
                                 $link->save();
-                                $this->info("New price saved for link {$link->url_link}");
+
                             }
                         } else {
                             $this->error("Price not found in JSON-LD for link: {$link->url_link}");
