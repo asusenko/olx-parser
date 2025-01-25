@@ -53,7 +53,7 @@ services:
       - "8081:80"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
-      - .:/var/www/html
+      - ./olx-parser-app:/var/www/html
     depends_on:
       - app
 
