@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\User;
 use App\Models\Link;
+use App\Models\User;
+use Illuminate\Http\Request;
 
 class SubscriptionController extends Controller
 {
@@ -19,21 +19,18 @@ class SubscriptionController extends Controller
         // Check if the user exists or create a new one
         $user = User::firstOrCreate(['email' => $validated['email']]);
 
-        // Check if a subscription already exists for this user and URL
-        $existingLink = Link::where('user_id', $user->id)
-                            ->where('url_link', $validated['url_link'])
-                            ->first();
+        // Check if the link already exists in the links table
+        $link = Link::firstOrCreate(
+            ['url_link' => $validated['url_link']],
+            ['last_price' => null] // Set initial price to null
+        );
 
-        if ($existingLink) {
+        // Attach the link to the user if not already subscribed
+        if ($user->links()->where('link_id', $link->id)->exists()) {
             return response()->json(['message' => 'You are already subscribed to this listing.'], 200);
         }
 
-        // Create a new subscription (link)
-        $link = Link::create([
-            'user_id' => $user->id,
-            'url_link' => $validated['url_link'],
-            'last_price' => null, // Initially, no price is tracked
-        ]);
+        $user->links()->attach($link->id);
 
         return response()->json(['message' => 'Subscription successful!'], 201);
     }

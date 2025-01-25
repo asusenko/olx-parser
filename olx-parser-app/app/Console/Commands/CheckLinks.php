@@ -5,8 +5,8 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use App\Models\Link;
-use Resend\Laravel\Facades\Resend;
 use Illuminate\Support\Facades\View;
+use Resend\Laravel\Facades\Resend;
 
 class CheckLinks extends Command
 {
@@ -17,19 +17,17 @@ class CheckLinks extends Command
     public function handle()
     {
         try {
-            // Отримуємо всі унікальні посилання
-            $linksGrouped = Link::all()->groupBy('url_link');
+            $links = Link::with('users')->get();
 
-            foreach ($linksGrouped as $url => $links) {
+            foreach ($links as $link) {
+                $url = $link->url_link;
                 $this->info("Checking link: {$url}");
 
-                // Перевіряємо ціну лише один раз для унікального посилання
                 $response = Http::get($url);
 
                 if ($response->successful()) {
                     $html = $response->body();
 
-                    // Витягуємо JSON-LD блок з HTML
                     preg_match('/<script[^>]*type=["\']application\/ld\+json["\'][^>]*>(.*?)<\/script>/is', $html, $matches);
 
                     if (!empty($matches[1])) {
@@ -37,42 +35,38 @@ class CheckLinks extends Command
 
                         if (isset($jsonLd['offers']['price'])) {
                             $price = $jsonLd['offers']['price'];
-                            $firstLink = $links->first(); // Беремо перший запис для оновлення ціни
 
-                            // Обробка зміни ціни
-                            if (empty($firstLink->last_price)) {
-                                $firstLink->last_price = $price;
-                                $firstLink->save();
+                            if (empty($link->last_price)) {
+                                $link->last_price = $price;
+                                $link->save();
                                 $this->info("New price saved for link: {$url}");
-                            } elseif ($firstLink->last_price != $price) {
-                                $this->warn("Price changed for link: {$url} (Old Price: {$firstLink->last_price}, New Price: {$price})");
-                                $firstLink->last_price = $price;
-                                $firstLink->save();
+                            } elseif ($link->last_price != $price) {
+                                $this->warn("Price changed for link: {$url} (Old Price: {$link->last_price}, New Price: {$price})");
+                                $oldPrice = $link->last_price;
+                                $link->last_price = $price;
+                                $link->save();
 
-                                // Повідомляємо всіх підписників
-                                foreach ($links as $link) {
-                                    if ($link->user) {
-                                        $htmlContent = View::make('emails.price-changed', [
-                                            'link' => $link,
-                                            'oldPrice' => $firstLink->last_price,
-                                            'newPrice' => $price,
-                                        ])->render();
+                                foreach ($link->users as $user) {
+                                    $htmlContent = View::make('emails.price-changed', [
+                                        'link' => $link,
+                                        'oldPrice' => $oldPrice,
+                                        'newPrice' => $price,
+                                    ])->render();
 
-                                        Resend::emails()->send([
-                                            'from' => 'Robot <onboarding@resend.dev>',
-                                            'to' => $link->user->email,
-                                            'subject' => 'Price Changed!',
-                                            'html' => $htmlContent,
-                                        ]);
+                                    Resend::emails()->send([
+                                        'from' => 'Robot <onboarding@resend.dev>',
+                                        'to' => 'susenko.andrii@gmail.com', //$user->email,
+                                        'subject' => "Price Changed! ({$user->email})",
+                                        'html' => $htmlContent,
+                                    ]);
 
-                                        $this->info("Email sent to {$link->user->email} about price change.");
-                                    }
+                                    $this->info("Email sent to {$user->email} about price change.");
                                 }
                             } else {
                                 $this->info("Price remains the same for link: {$url}");
                             }
                         } else {
-                            $this->error("Price not found for link: {$url}");
+                            $this->error("Price not found in JSON-LD for link: {$url}");
                         }
                     } else {
                         $this->error("JSON-LD block not found for link: {$url}");

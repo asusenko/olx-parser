@@ -9,12 +9,10 @@ class Link extends Model
 {
     use HasFactory;
 
-    protected $table = 'links'; // Explicitly specify the table name if needed
+    protected $fillable = ['url_link', 'last_price'];
 
-    protected $fillable = ['user_id', 'url_link', 'last_price'];
-
-    public function user()
+    public function users()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsToMany(User::class, 'user_link');
     }
 }
