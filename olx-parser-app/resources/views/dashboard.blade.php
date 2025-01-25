@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Dashboard') }}
+            {{ __('Кабінет') }}
         </h2>
     </x-slot>
 
@@ -9,17 +9,17 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
-                    <h3 class="text-lg font-medium">Subscribed Links</h3>
+                    <h3 class="text-lg font-medium">Підписки</h3>
                     <ul>
                         @forelse ($links as $link)
                             <li>
                                 <a href="{{ $link->url_link }}" target="_blank" class="text-blue-500 underline">
                                     {{ $link->url_link }}
                                 </a>
-                                <span class="text-sm text-gray-500">Last Price: {{ $link->last_price }}</span>
+                                <span class="text-sm text-gray-500">Остання ціна: {{ $link->last_price }}</span>
                             </li>
                         @empty
-                            <li class="text-gray-500">You have no subscriptions yet.</li>
+                            <li class="text-gray-500">Поки що немає підписок.</li>
                         @endforelse
                     </ul>
                 </div>

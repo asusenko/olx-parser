@@ -13,3 +13,7 @@ Route::get('/test', function () {
 });
 
 Route::post('/subscribe', [SubscriptionController::class, 'subscribe']);
+
+Route::get('/check-subscription', [SubscriptionController::class, 'checkSubscription']);
+
+Route::delete('/delete-subscription', [SubscriptionController::class, 'deleteSubscription']);
