@@ -18,7 +18,6 @@ COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
 # Встановлення Node.js та npm
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs
-RUN apt-get update && apt-get install -y cron
 
 WORKDIR /var/www/html
 
