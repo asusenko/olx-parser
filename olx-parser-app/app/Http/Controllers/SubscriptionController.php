@@ -75,6 +75,4 @@ class SubscriptionController extends Controller
 
         return response()->json(['message' => 'Subscription deleted successfully.', 'success' => true], 200);
     }
-
-
 }
